@@ -1,6 +1,6 @@
 # Data Warehouse
 
-A project to design and build a data warehouse using PostgreSQL.
+A simple data warehouse based on PostgreSQL.
 
 ## Background
 
@@ -17,9 +17,22 @@ Stakeholders have outlined several analytical matrices they wish to explore, inc
 - Profitability analysis: Determining the profitability of different products, customer segments, or sales channels to optimize business strategies,
 - Sales forecasting: Predicting future sales trends and demand to optimize inventory levels and resource allocation.
 
+The constructed Data Warehouse should be able to address these analytical questions.
+
 ## Project Explanation
 
 ### Requirements Gathering & Proposed Solution
+
+The company already has a database containing data about sales transactions.
+
+#### The challenge
+
+1. The company does not have specialized storage for data required for analytical purposes.
+
+#### The solutions
+
+1. __Data warehouse:__ constructing a data warehouse to store data specifically for analytical purposes, separate from daily transactional data.
+2. __ETL pipeline:__ establishing a data pipeline to extract data from sources, transform the data to make them suitable for analysis, and ultimately load the data into the warehouse.
 
 ### Design of Data Warehouse Model
 
