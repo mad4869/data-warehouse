@@ -36,6 +36,33 @@ The company already has a database containing data about sales transactions.
 
 ### Design of Data Warehouse Model
 
+In this project, the data warehouse design implemented the __Kimball Model__, which structures data with the __Dimensional Model__ approach. The implementation of this design model required the following steps:
+
+1. Selecting the business process
+2. Declaring the grain
+3. Identifying the dimensions
+4. Identifying the facts.
+
+#### Selecting the business process
+
+Based on the given requirements, the business process selected for this project is __sales transaction.__
+
+#### Declaring the grain
+
+- A single record represents a book purchase by a customer.
+
+#### Identifying the dimensions
+
+- Customer: `dim_customer`
+- Book: `dim_book`
+- Date: `dim_date`
+
+#### Identifying the facts
+
+- Sales transaction: `fct_sales_transaction`
+
+#### Data warehouse diagram
+
 ### Implementation of Data Pipeline
 
 ### Testing Scenario
