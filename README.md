@@ -45,7 +45,7 @@ In this project, the data warehouse design implemented the __Kimball Model__, wh
 
 #### Selecting the business process
 
-Based on the given requirements, the business process selected for this project is __sales transaction.__
+Based on the given requirements, the business process selected for this project is __book order.__
 
 #### Declaring the grain
 
@@ -59,7 +59,7 @@ Based on the given requirements, the business process selected for this project 
 
 #### Identifying the facts
 
-- Sales transaction: `fct_sales_transaction`
+- Book order: `fct_book_order`
 
 #### Data warehouse diagram
 
