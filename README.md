@@ -32,7 +32,7 @@ The company already has a database containing data about sales transactions.
 #### The solutions
 
 1. __Data warehouse:__ constructing a data warehouse to store data specifically for analytical purposes, separate from daily transactional data.
-2. __ETL pipeline:__ establishing a data pipeline to extract data from sources, transform the data to make them suitable for analysis, and ultimately load the data into the warehouse.
+2. __ELT pipeline:__ establishing a data pipeline to extract data from sources, load the data into the warehouse, and transform the data to make them suitable for analysis.
 
 ### Design of Data Warehouse Model
 
