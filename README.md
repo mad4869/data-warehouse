@@ -63,6 +63,8 @@ Based on the given requirements, the business process selected for this project 
 
 #### Data warehouse diagram
 
+![diagram of data warehouse](docs/ERD.jpg)
+
 ### Implementation of Data Pipeline
 
 ### Testing Scenario
