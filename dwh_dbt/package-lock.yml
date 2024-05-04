@@ -1,6 +1,10 @@
 packages:
 - package: calogica/dbt_date
   version: 0.10.1
+- package: calogica/dbt_expectations
+  version: 0.10.3
 - package: dbt-labs/dbt_utils
   version: 1.1.1
-sha1_hash: b63a755b06dbef9a69dfb97701f12f3f9ad2e27b
+- package: Snowflake-Labs/dbt_constraints
+  version: 0.6.3
+sha1_hash: 81c42a78d85a032b4c17fc94fcb2d234e6218000
