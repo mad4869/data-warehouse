@@ -4,8 +4,6 @@ import datetime
 import time
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 class GlobalParams(luigi.Config):
     CurrentTimestampParams = luigi.DateSecondParameter(default=datetime.datetime.now())
 
@@ -56,18 +54,14 @@ class DbtRun(DbtTask):
     def requires(self):
         return DbtDeps()
 
-class DbtTest(DbtTask):
-    command = "test"
+class DbtSnapshot(DbtTask):
+    command = "snapshot"
 
     def requires(self):
         return DbtRun()
 
-if __name__ == "__main__":
-    luigi.build([
-        DbtDebug(),
-        DbtDeps(),
-        DbtRun(),
-        DbtTest()
-        ],
-        local_scheduler=True
-    )
+class DbtTest(DbtTask):
+    command = "test"
+
+    def requires(self):
+        return DbtSnapshot()
