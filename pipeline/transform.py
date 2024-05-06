@@ -2,7 +2,11 @@ import subprocess as sp
 import luigi
 import datetime
 import time
-import logging
+import pandas as pd
+
+from .load import Load
+from .utils.log_config import log_config
+from .constants.root_dir import ROOT_DIR
 
 class GlobalParams(luigi.Config):
     CurrentTimestampParams = luigi.DateSecondParameter(default=datetime.datetime.now())
@@ -14,13 +18,15 @@ class DbtTask(luigi.Task):
 
     def requires(self):
         pass
-
-    def output(self):
-        return luigi.LocalTarget(f"/home/mad4869/Documents/pacmann/data-storage/data-warehouse/logs/dbt_{self.command}/dbt_{self.command}_logs_{self.current_timestamp}.log")
     
     def run(self):
+        logger = log_config(f"transform_{self.command}")
+        logger.info(f"==================================STARTING TRANSFORM DATA - dbt {self.command}=======================================")
+
         try:
-            with open(self.output().path, "a") as f:
+            start_time = time.time()
+
+            with open(f"{ROOT_DIR}/logs/transform_{self.command}/transform_{self.command}_{self.current_timestamp}.log", "a") as f:
                 p1 = sp.run(
                     f"cd ./dwh_dbt/ && dbt {self.command}",
                     stdout=f,
@@ -31,16 +37,43 @@ class DbtTask(luigi.Task):
                 )
 
                 if p1.returncode == 0:
-                    logging.info(f"Success running dbt {self.command} process")
+                    logger.info(f"Success running dbt {self.command} process")
                 else:
-                    logging.error(f"Failed running dbt {self.command} process")
+                    logger.error(f"Failed running dbt {self.command} process")
 
-            time.sleep(2)
+            end_time = time.time()
+            exe_time = end_time - start_time
+
+            summary_data = {
+                "timestamp": [datetime.datetime.now()],
+                "task": [f"DBT {self.command}"],
+                "status": ["Success"],
+                "execution_time": [exe_time]
+            }
+            summary = pd.DataFrame(summary_data)
+            summary.to_csv(self.output().path, index=False, mode="a")
         except Exception as e:
-            logging.error(f"Failed process: {e}")
+            logger.error(f"Failed process: {e}")
+
+            summary_data = {
+                "timestamp": [datetime.datetime.now()],
+                "task": [f"DBT {self.command}"],
+                "status": ["Failed"],
+                "execution_time": [0]
+            }
+            summary = pd.DataFrame(summary_data)
+            summary.to_csv(self.output().path, index=False, mode="a")
+        
+        logger.info(f"==================================ENDING TRANSFORM DATA - dbt {self.command}=======================================")
+    
+    def output(self):
+        return luigi.LocalTarget(f"{ROOT_DIR}/pipeline/summary/pipeline_summary.csv")
 
 class DbtDebug(DbtTask):
     command = "debug"
+
+    def requires(self):
+        return Load()
 
 class DbtDeps(DbtTask):
     command = "deps"

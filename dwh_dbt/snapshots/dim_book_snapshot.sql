@@ -2,7 +2,7 @@
 
 {{
     config(
-        target_schema="dwh_snapshots",
+        target_schema="dwh_snapshot",
         unique_key="sk_book_id",
         strategy="timestamp",
         updated_at="updated_at"

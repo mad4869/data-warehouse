@@ -1,21 +1,20 @@
 import luigi
 import datetime
 import time
-import logging
 import pandas as pd
 
-from utils.db_conn import source_conn
-from utils.log_config import log_config
-from constants.tables import tables
+from .utils.db_conn import source_conn
+from .utils.log_config import log_config
+from .constants.tables import tables
+from .constants.root_dir import ROOT_DIR
 
 class Extract(luigi.Task):
     def requires(self):
         pass
 
     def run(self):
-        log_config("extract")
-        
-        logging.info("==================================STARTING EXTRACT DATA=======================================")
+        logger = log_config("extract")
+        logger.info("==================================STARTING EXTRACT DATA=======================================")
         
         try:
             start_time = time.time()    
@@ -24,10 +23,10 @@ class Extract(luigi.Task):
                 df = pd.read_sql_query(f"SELECT * FROM {table}", source_conn)
                 df.to_csv(self.output()[index].path, index=False)
 
-                logging.info(f"EXTRACT '{table}' - SUCCESS")
+                logger.info(f"EXTRACT '{table}' - SUCCESS")
             
             source_conn.dispose()
-            logging.info("EXTRACT ALL TABLES - SUCCESS")
+            logger.info("EXTRACT ALL TABLES - SUCCESS")
 
             end_time = time.time()
             exe_time = end_time - start_time
@@ -39,9 +38,9 @@ class Extract(luigi.Task):
                 "execution_time": [exe_time]
             }
             summary = pd.DataFrame(summary_data)
-            summary.to_csv("../summaries/extract_summary.csv", index=False)
+            summary.to_csv("./pipeline/summary/pipeline_summary.csv", index=False, mode="a")
         except Exception as e:
-            logging.info(f"EXTRACT ALL TABLES - FAILED: {e}")
+            logger.error(f"EXTRACT ALL TABLES - FAILED: {e}")
 
             summary_data = {
                 "timestamp": [datetime.datetime.now()],
@@ -50,14 +49,14 @@ class Extract(luigi.Task):
                 "execution_time": [0]
             }
             summary = pd.DataFrame(summary_data)
-            summary.to_csv("../summaries/extract_summary.csv", index=False)
+            summary.to_csv("./pipeline/summary/pipeline_summary.csv", index=False, mode="a")
         
-        logging.info("==================================ENDING EXTRACT DATA=======================================")
+        logger.info("==================================ENDING EXTRACT DATA=======================================")
 
     def output(self) -> list[luigi.LocalTarget]:
         outputs = []
         
         for table in tables:
-            outputs.append(luigi.LocalTarget(f"../src/data/{table}.csv"))
+            outputs.append(luigi.LocalTarget(f"{ROOT_DIR}/src/data/{table}.csv"))
         
         return outputs

@@ -4,9 +4,10 @@ import sentry_sdk
 from pipeline.extract import Extract
 from pipeline.load import Load
 from pipeline.transform import DbtDebug, DbtDeps, DbtRun, DbtSnapshot, DbtTest
+from pipeline.constants.sentry_dsn import SENTRY_DSN
 
 sentry_sdk.init(
-    dsn="https://245f925fd0fe886dbe02afd9033caaa6@o414765.ingest.us.sentry.io/4507199769804800",
+    dsn=SENTRY_DSN,
     enable_tracing=True,
 )
 

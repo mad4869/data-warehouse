@@ -9,7 +9,7 @@ VENV_PATH="/home/mad4869/Documents/pacmann/data-storage/data-warehouse/dwh-venv/
 source "$VENV_PATH"
 
 # Set Python script
-PYTHON_SCRIPT="/home/mad4869/Documents/pacmann/data-storage/data-warehouse/elt_pipeline.py"
+PYTHON_SCRIPT="/home/mad4869/Documents/pacmann/data-storage/data-warehouse/elt.py"
 
 # Get Current Date
 current_datetime=$(date '+%d-%m-%Y_%H-%M')
