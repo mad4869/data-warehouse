@@ -1,8 +1,9 @@
-import subprocess as sp
+import time
 import luigi
 import datetime
-import time
+import traceback
 import pandas as pd
+import subprocess as sp
 
 from .load import Load
 from .utils.log_config import log_config
@@ -20,7 +21,7 @@ class DbtTask(luigi.Task):
         pass
     
     def run(self):
-        logger = log_config(f"transform_{self.command}")
+        logger = log_config(f"transform_{self.command}", self.current_timestamp)
         logger.info(f"==================================STARTING TRANSFORM DATA - dbt {self.command}=======================================")
 
         try:
@@ -39,7 +40,7 @@ class DbtTask(luigi.Task):
                 if p1.returncode == 0:
                     logger.info(f"Success running dbt {self.command} process")
                 else:
-                    logger.error(f"Failed running dbt {self.command} process")
+                    logger.error(f"Failed running dbt {self.command} process\n{traceback.format_exc()}")
 
             end_time = time.time()
             exe_time = end_time - start_time
@@ -53,7 +54,7 @@ class DbtTask(luigi.Task):
             summary = pd.DataFrame(summary_data)
             summary.to_csv(self.output().path, index=False, mode="a")
         except Exception as e:
-            logger.error(f"Failed process: {e}")
+            logger.error(f"Failed process: {e}\n{traceback.format_exc()}")
 
             summary_data = {
                 "timestamp": [datetime.datetime.now()],
@@ -66,7 +67,7 @@ class DbtTask(luigi.Task):
         
         logger.info(f"==================================ENDING TRANSFORM DATA - dbt {self.command}=======================================")
     
-    def output(self):
+    def output(self) -> luigi.LocalTarget:
         return luigi.LocalTarget(f"{ROOT_DIR}/pipeline/summary/pipeline_summary.csv")
 
 class DbtDebug(DbtTask):
