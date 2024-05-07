@@ -68,7 +68,7 @@ class DbtTask(luigi.Task):
         logger.info(f"==================================ENDING TRANSFORM DATA - dbt {self.command}=======================================")
     
     def output(self) -> luigi.LocalTarget:
-        return luigi.LocalTarget(f"{ROOT_DIR}/pipeline/summary/pipeline_summary.csv")
+        return luigi.LocalTarget(f"{ROOT_DIR}/pipeline/summaries/summary_{self.current_timestamp}.csv")
 
 class DbtDebug(DbtTask):
     command = "debug"

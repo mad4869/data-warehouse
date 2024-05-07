@@ -60,4 +60,4 @@ class Extract(luigi.Task):
         logger.info("==================================ENDING EXTRACT DATA=======================================")
 
     def output(self) -> luigi.LocalTarget:
-        return luigi.LocalTarget(f"{ROOT_DIR}/pipeline/summary/pipeline_summary.csv")
+        return luigi.LocalTarget(f"{ROOT_DIR}/pipeline/summaries/summary_{self.current_timestamp}.csv")
