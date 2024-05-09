@@ -65,6 +65,309 @@ Based on the given requirements, the business process selected for this project 
 
 ![diagram of data warehouse](docs/ERD.jpg)
 
+#### Slowly Changing Dimension (SCD) strategy
+
+The selected SCD strategy is type 2, which involves adding a new row for any updated record.
+
 ### Implementation of Data Pipeline
+
+This project uses __Luigi__ as a tool for constructing an ELT pipeline. Additionally, it employs the following complementary tools:
+
+- __Sentry__ for alerting
+- __Logging__ library for logging
+- __Pandas__ for generating summaries
+- __Cron__ for scheduling
+
+#### Extraction
+
+Data extraction from the source database is done by using __SQLAlchemy__ and __pandas.__
+
+```py
+class Extract(luigi.Task):
+    current_timestamp = GlobalParams().CurrentTimestampParams
+
+    def requires(self):
+        pass
+
+    def run(self):
+        logger = log_config("extract", self.current_timestamp)
+        logger.info("==================================STARTING EXTRACT DATA=======================================")
+        
+        try:
+            start_time = time.time()    
+            
+            for table in tables:
+                df = pd.read_sql_query(f"SELECT * FROM {table}", source_conn)
+                df.to_csv(f"./src/data/{table}.csv", index=False)
+
+                logger.info(f"EXTRACT '{table}' - SUCCESS")
+            
+            source_conn.dispose()
+            logger.info("EXTRACT ALL TABLES - DONE")
+
+            end_time = time.time()
+            exe_time = end_time - start_time
+
+            summary_data = {
+                "timestamp": [datetime.datetime.now()],
+                "task": ["Extract"],
+                "status": ["Success"],
+                "execution_time": [exe_time]
+            }
+            summary = pd.DataFrame(summary_data)
+            summary.to_csv(self.output().path, index=False, mode="a")
+        except Exception as e:
+            logger.error(f"EXTRACT ALL TABLES - FAILED: {e}\n{traceback.format_exc()}")
+
+            summary_data = {
+                "timestamp": [datetime.datetime.now()],
+                "task": ["Extract"],
+                "status": ["Failed"],
+                "execution_time": [0]
+            }
+            summary = pd.DataFrame(summary_data)
+            summary.to_csv(self.output().path, index=False, mode="a")
+        
+        logger.info("==================================ENDING EXTRACT DATA=======================================")
+
+    def output(self) -> luigi.LocalTarget:
+        return luigi.LocalTarget(f"{ROOT_DIR}/pipeline/summaries/summary_{self.current_timestamp}.csv")
+```
+
+#### Load
+
+The extracted data is loaded into the target database.
+
+```py
+class Load(luigi.Task):
+    current_timestamp = GlobalParams().CurrentTimestampParams
+
+    def requires(self):
+        return Extract()
+    
+    def run(self):
+        logger = log_config("load", self.current_timestamp)
+        logger.info("==================================PREPARATION - TRUNCATE DATA=======================================")
+
+        # Truncating the tables before loading the data to avoid duplicates
+        try:
+            with target_conn.connect() as conn:
+                for table in tables:
+                    select_query = text(f"SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{table}'")
+                    result = conn.execute(select_query)
+
+                    if result.scalar_one_or_none():
+                        truncate_query = text(f"TRUNCATE public.{table} CASCADE")
+                        
+                        conn.execute(truncate_query)
+                        conn.commit()
+
+                        logger.info(f"TRUNCATE {table} - SUCCESS")
+                    else:
+                        logger.info(f"Table '{table}' does not exist, skipping truncate operation")
+            logger.info("TRUNCATE ALL TABLES - DONE")
+
+        except Exception as e:
+            logger.error(f"TRUNCATE DATA - FAILED: {e}\n{traceback.format_exc()}")
+        
+        logger.info("==================================ENDING PREPARATION=======================================")
+        logger.info("==================================STARTING LOAD DATA=======================================")
+
+        # Loading the data after the tables already empty
+        try:
+            start_time = time.time()
+
+            dfs: list[pd.DataFrame] = []
+
+            for table in tables:
+                df = pd.read_csv(f"./src/data/{table}.csv")
+                dfs.append(df)
+
+                logger.info(f"READ '{table}' - SUCCESS")
+            
+            logger.info("READ EXTRACTED TABLES - SUCCESS")
+
+            for index, df in enumerate(dfs):
+                df.to_sql(
+                    name=tables[index],
+                    con=target_conn,
+                    schema="public",
+                    if_exists="append",
+                    index=False
+                )
+
+                logger.info(f"LOAD '{tables[index]}' - SUCCESS")
+            
+            logger.info("LOAD ALL DATA - SUCCESS")
+
+            end_time = time.time()
+            exe_time = end_time - start_time
+
+            summary_data = {
+                "timestamp": [datetime.datetime.now()],
+                "task": ["Load"],
+                "status": ["Success"],
+                "execution_time": [exe_time]
+            }
+            summary = pd.DataFrame(summary_data)
+            summary.to_csv(self.output().path, index=False, mode="a")
+        except Exception as e:
+            logger.error(f"LOAD ALL DATA - FAILED: {e}\n{traceback.format_exc()}")
+
+            summary_data = {
+                "timestamp": [datetime.datetime.now()],
+                "task": ["Load"],
+                "status": ["Failed"],
+                "execution_time": [0]
+            }
+            summary = pd.DataFrame(summary_data)
+            summary.to_csv(self.output().path, index=False, mode="a")
+        
+        logger.info("==================================ENDING LOAD DATA=======================================")
+    
+    def output(self) -> luigi.LocalTarget:
+        return luigi.LocalTarget(f"{ROOT_DIR}/pipeline/summaries/summary_{self.current_timestamp}.csv")
+```
+
+#### Transformation
+
+Data transformation is conducted using __dbt__ to manage all necessary processes, including creating staging data, generating dimension and fact tables, capturing snapshot data/SCD, and testing the data.
+
+```py
+class DbtTask(luigi.Task):
+    command = luigi.Parameter()
+
+    current_timestamp = GlobalParams().CurrentTimestampParams
+
+    def requires(self):
+        pass
+    
+    def run(self):
+        logger = log_config(f"transform_{self.command}", self.current_timestamp)
+        logger.info(f"==================================STARTING TRANSFORM DATA - dbt {self.command}=======================================")
+
+        try:
+            start_time = time.time()
+
+            with open(f"{ROOT_DIR}/logs/transform_{self.command}/transform_{self.command}_{self.current_timestamp}.log", "a") as f:
+                p1 = sp.run(
+                    f"cd ./dwh_dbt/ && dbt {self.command}",
+                    stdout=f,
+                    stderr=sp.PIPE,
+                    text=True,
+                    shell=True,
+                    check=True
+                )
+
+                if p1.returncode == 0:
+                    logger.info(f"Success running dbt {self.command} process")
+                else:
+                    logger.error(f"Failed running dbt {self.command} process\n{traceback.format_exc()}")
+
+            end_time = time.time()
+            exe_time = end_time - start_time
+
+            summary_data = {
+                "timestamp": [datetime.datetime.now()],
+                "task": [f"DBT {self.command}"],
+                "status": ["Success"],
+                "execution_time": [exe_time]
+            }
+            summary = pd.DataFrame(summary_data)
+            summary.to_csv(self.output().path, index=False, mode="a")
+        except Exception as e:
+            logger.error(f"Failed process: {e}\n{traceback.format_exc()}")
+
+            summary_data = {
+                "timestamp": [datetime.datetime.now()],
+                "task": [f"DBT {self.command}"],
+                "status": ["Failed"],
+                "execution_time": [0]
+            }
+            summary = pd.DataFrame(summary_data)
+            summary.to_csv(self.output().path, index=False, mode="a")
+        
+        logger.info(f"==================================ENDING TRANSFORM DATA - dbt {self.command}=======================================")
+    
+    def output(self) -> luigi.LocalTarget:
+        return luigi.LocalTarget(f"{ROOT_DIR}/pipeline/summaries/summary_{self.current_timestamp}.csv")
+
+class DbtDebug(DbtTask):
+    command = "debug"
+
+    def requires(self):
+        return Load()
+
+class DbtDeps(DbtTask):
+    command = "deps"
+
+    def requires(self):
+        return DbtDebug()
+
+class DbtRun(DbtTask):
+    command = "run"
+
+    def requires(self):
+        return DbtDeps()
+
+class DbtSnapshot(DbtTask):
+    command = "snapshot"
+
+    def requires(self):
+        return DbtRun()
+
+class DbtTest(DbtTask):
+    command = "test"
+
+    def requires(self):
+        return DbtSnapshot()
+```
+
+#### Pipeline Building
+
+Once all necessary steps have been defined, the aforementioned processes are assembled. Sentry is integrated to alert any issues that may arise.
+
+```py
+sentry_sdk.init(
+    dsn=SENTRY_DSN,
+    enable_tracing=True,
+)
+
+if __name__ == "__main__":
+    luigi.build(
+        [Extract(), Load(), DbtDebug(), DbtDeps(), DbtRun(), DbtSnapshot(), DbtTest()],
+        local_scheduler=True,
+    )
+```
+
+#### Scheduling
+
+The final step is create a script file to execute the pipeline and set up a cron job to ensure the script runs at regular intervals. For example, every 10 minutes.
+
+```bash
+#!/bin/bash
+
+echo "========== Start dbt with Luigi Orchestration Process =========="
+
+# Accessing Env Variables
+source .env
+
+# Activate Virtual Environment
+source "$ROOT_DIR/dwh-venv/bin/activate"
+
+# Set Python script
+PYTHON_SCRIPT="$ROOT_DIR/elt.py"
+
+# Get Current Date
+current_datetime=$(date '+%d-%m-%Y_%H-%M')
+
+# Append Current Date in the Log File
+LOG_FILE="$ROOT_DIR/logs/elt/elt_$current_datetime.log"
+
+# Run Python Script and Insert Log
+python "$PYTHON_SCRIPT" >> "$LOG_FILE" 2>&1
+
+echo "========== End of dbt with Luigi Orchestration Process =========="
+```
 
 ### Testing Scenario

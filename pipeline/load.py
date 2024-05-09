@@ -24,6 +24,7 @@ class Load(luigi.Task):
         logger = log_config("load", self.current_timestamp)
         logger.info("==================================PREPARATION - TRUNCATE DATA=======================================")
 
+        # Truncating the tables before loading the data to avoid duplicates
         try:
             with target_conn.connect() as conn:
                 for table in tables:
@@ -47,6 +48,7 @@ class Load(luigi.Task):
         logger.info("==================================ENDING PREPARATION=======================================")
         logger.info("==================================STARTING LOAD DATA=======================================")
 
+        # Loading the data after the tables already empty
         try:
             start_time = time.time()
 
