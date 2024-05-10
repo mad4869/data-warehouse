@@ -48,7 +48,6 @@ book_id,title,isbn13,language_id,num_pages,publication_date,publisher_id
 47,The Reverse of the Medal (Aubrey & Maturin #11),9780006499268,1,261,2010-04-01,882
 48,Miss Marple Omnibus Vol. 3 (Murder at the Vicarage / Nemesis / Sleeping Murder / At Bertram's Hotel),9780006499619,1,688,1997-07-10,869
 49,Zelda's Cut,9780006511779,1,432,2001-02-01,889
-50,Spares,9780006512677,1,317,1998-11-02,882
 51,The Wise Woman,9780006514640,1,640,2002-02-01,889
 52,Girls' Night In,9780006514855,5,586,2000-07-03,882
 53,She Came to Stay,9780006540809,5,416,1995-10-09,712
@@ -11126,3 +11125,5 @@ book_id,title,isbn13,language_id,num_pages,publication_date,publisher_id
 11125,Fantasmas,9789879397503,4,442,2006-08-28,1284
 11126,Stand by Me,9789998691568,1,96,1986-06-01,430
 11127,The Great Divorce,9790007672386,1,160,2002-02-01,882
+50,New Spares,9780006512677,1,317,1998-11-02,882
+11128,Pacmann,1313131313131,1,100,2020-10-10,1010
