@@ -50,6 +50,8 @@ Based on the given requirements, the business process selected for this project 
 #### Declaring the grain
 
 - A single record represents a book purchase by a customer.
+- A single record represents monthly sales for a book.
+- A single record represents each customer's current and previous order, as well as the time taken for repeat orders.
 
 #### Identifying the dimensions
 
@@ -60,6 +62,8 @@ Based on the given requirements, the business process selected for this project 
 #### Identifying the facts
 
 - Book order: `fct_book_order`
+- Monthly sale: `fct_monthly_sale`
+- Repeat order time: `fct_repeat_order_time`
 
 #### Data warehouse diagram
 
@@ -134,7 +138,7 @@ class Extract(luigi.Task):
         return luigi.LocalTarget(f"{ROOT_DIR}/pipeline/summaries/summary_{self.current_timestamp}.csv")
 ```
 
-#### Load
+#### Loading
 
 The extracted data is loaded into the target database.
 
@@ -371,3 +375,37 @@ echo "========== End of dbt with Luigi Orchestration Process =========="
 ```
 
 ### Testing Scenario
+
+#### Scenario 1: Initial load
+
+Scenario 1 validates that the pipeline runs as expected, executing data extraction, loading, and transformation without encountering errors.
+
+![Luigi successfully executed the ELT process](docs/luigi.png)
+
+It also verifies the successful construction of staging data, snapshot tables, dimension tables, and fact tables within the data warehouse.
+
+![Staging data inside the staging schema](docs/dwh_staging.png)
+![Snapshot data inside the snapshot schema](docs/dwh_snapshot.png)
+![Dimension and fact data inside the final schema](docs/dwh_final.png)
+
+#### Scenario 2: SCD strategy
+
+Scenario 2 ensures the effective implementation of the SCD strategy in the data warehouse, accurately capturing changes in dimensions. By using a type 2 strategy, the snapshot table adds a new row for updated records.
+
+Before updating the record:
+![The state of snapshot table before updating the record](docs/snapshot-before.png)
+After updating the record:
+![The state of snapshot table after updating the record](docs/snapshot-after.png)
+
+#### Scenario 3: New data
+
+Scenario 3 validates the ability of the data pipeline to handle new data from the source and load it into the data warehouse.
+
+Before inserting new data:
+![The state of the table before inserting new data](docs/new-data-before.png)
+After inserting new data:
+![The state of the table after inserting new data](docs/new-data-after.png)
+
+## Conclusion
+
+This document outlines the process of building a data warehouse using the dimensional model approach. While there is room for improvement, it provides a comprehensive overview of the step-by-step process for constructing an ELT pipeline and data warehouse.
