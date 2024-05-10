@@ -385,7 +385,9 @@ Scenario 1 validates that the pipeline runs as expected, executing data extracti
 It also verifies the successful construction of staging data, snapshot tables, dimension tables, and fact tables within the data warehouse.
 
 ![Staging data inside the staging schema](docs/dwh_staging.png)
+
 ![Snapshot data inside the snapshot schema](docs/dwh_snapshot.png)
+
 ![Dimension and fact data inside the final schema](docs/dwh_final.png)
 
 #### Scenario 2: SCD strategy
@@ -393,8 +395,11 @@ It also verifies the successful construction of staging data, snapshot tables, d
 Scenario 2 ensures the effective implementation of the SCD strategy in the data warehouse, accurately capturing changes in dimensions. By using a type 2 strategy, the snapshot table adds a new row for updated records.
 
 Before updating the record:
+
 ![The state of snapshot table before updating the record](docs/snapshot-before.png)
+
 After updating the record:
+
 ![The state of snapshot table after updating the record](docs/snapshot-after.png)
 
 #### Scenario 3: New data
@@ -402,8 +407,11 @@ After updating the record:
 Scenario 3 validates the ability of the data pipeline to handle new data from the source and load it into the data warehouse.
 
 Before inserting new data:
+
 ![The state of the table before inserting new data](docs/new-data-before.png)
+
 After inserting new data:
+
 ![The state of the table after inserting new data](docs/new-data-after.png)
 
 ## Conclusion
