@@ -41,7 +41,7 @@ In this project, the data warehouse design implemented the __Kimball Model__, wh
 1. Selecting the business process
 2. Declaring the grain
 3. Identifying the dimensions
-4. Identifying the facts.
+4. Identifying the facts
 
 #### Selecting the business process
 
