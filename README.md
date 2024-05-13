@@ -344,6 +344,8 @@ if __name__ == "__main__":
     )
 ```
 
+The database output can be accessed using Docker Image available [here](https://hub.docker.com/r/mad4869/dwh_postgres).
+
 #### Scheduling
 
 The final step is create a script file to execute the pipeline and set up a cron job to ensure the script runs at regular intervals. For example, every 10 minutes.
